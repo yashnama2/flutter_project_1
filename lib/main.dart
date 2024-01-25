@@ -2,6 +2,7 @@
 
 import 'package:english_words/english_words.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_project_1/introduction_page.dart';
 import 'package:flutter_project_1/posts.dart';
 import 'package:provider/provider.dart';
 import 'package:http/http.dart' as http;
@@ -9,6 +10,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'dart:convert';
 import 'login.dart';
 import 'profile.dart';
+import 'introduction_page.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -31,7 +33,7 @@ class MyApp extends StatelessWidget {
           useMaterial3: true,
           colorScheme: ColorScheme.fromSeed(seedColor: Colors.indigo),
         ),
-        home: LoginPage(isLoggedIn: isLoggedIn),
+        home: isLoggedIn ? LoginPage(isLoggedIn: isLoggedIn) : IntroductionPage(isLoggedIn: isLoggedIn),
       ),
     );
   }
