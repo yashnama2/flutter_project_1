@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_project_1/login.dart';
 import 'package:dots_indicator/dots_indicator.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:animate_do/animate_do.dart';
 
 class IntroductionPage extends StatefulWidget {
@@ -13,6 +14,18 @@ class IntroductionPage extends StatefulWidget {
 class _IntroductionPageState extends State<IntroductionPage> {
   final PageController _pageController = PageController(initialPage: 0);
   int _currentPage = 0;
+
+  @override
+  initState() {
+    super.initState();
+    print('init called');
+    _checkFirstTime();
+  }
+
+  Future<void> _checkFirstTime() async {
+    SharedPreferences prefs = await SharedPreferences.getInstance();
+    prefs.setBool('firstTime', false);
+  }
 
   final List<Widget> _pages = [
     IntroductionScreen(

@@ -32,7 +32,7 @@ class _BlogPostsPageState extends State<BlogPostsPage> {
 
     if (response.statusCode == 200) {
       final Map<String, dynamic> responseData = json.decode(response.body);
-      await Future.delayed(Duration(milliseconds: 500));
+      //await Future.delayed(Duration(milliseconds: 500));
       if (responseData.containsKey("results")) {
         setState(() {
           blogPosts = responseData["results"];
@@ -172,7 +172,13 @@ class _BlogPostsPageState extends State<BlogPostsPage> {
               child: ListView.builder(
                 itemCount: postFilter().length,
                 itemBuilder: (context, index) {
-                  final post = postFilter()[index];
+                  final List<dynamic> sortedPost = postFilter();
+                  sortedPost.sort((a, b) {
+                    DateTime dateA = DateTime.parse(a['published_date']);
+                    DateTime dateB = DateTime.parse(b['published_date']);
+                    return dateB.compareTo(dateA);
+                  });
+                  final post = sortedPost[index];
                   return Padding(
                     padding: EdgeInsets.symmetric(vertical: 10, horizontal: 5),
                     child: GestureDetector(

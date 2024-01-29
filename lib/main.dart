@@ -10,19 +10,20 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'dart:convert';
 import 'login.dart';
 import 'profile.dart';
-import 'introduction_page.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   SharedPreferences prefs = await SharedPreferences.getInstance();
   bool isLoggedIn = prefs.getBool('isLoggedIn') ?? false;
-  runApp(MyApp(isLoggedIn: isLoggedIn));
+  bool firstTime = prefs.getBool('firstTime') ?? true;
+  runApp(MyApp(isLoggedIn: isLoggedIn, firstTime: firstTime));
 }
 
 class MyApp extends StatelessWidget {
   final bool isLoggedIn;
+  final bool firstTime;
 
-  MyApp({required this.isLoggedIn});
+  MyApp({required this.isLoggedIn, required this.firstTime});
   @override
   Widget build(BuildContext context) {
     return ChangeNotifierProvider(
@@ -33,7 +34,9 @@ class MyApp extends StatelessWidget {
           useMaterial3: true,
           colorScheme: ColorScheme.fromSeed(seedColor: Colors.indigo),
         ),
-        home: isLoggedIn ? LoginPage(isLoggedIn: isLoggedIn) : IntroductionPage(isLoggedIn: isLoggedIn),
+        home: firstTime
+            ? IntroductionPage(isLoggedIn: isLoggedIn)
+            : LoginPage(isLoggedIn: isLoggedIn),
       ),
     );
   }
@@ -64,6 +67,7 @@ class MyAppState extends ChangeNotifier {
   }
 }
 
+// ignore: must_be_immutable
 class MyHomePage extends StatefulWidget {
   int? userId;
   String? token;
@@ -98,10 +102,10 @@ class _MyHomePageState extends State<MyHomePage> {
   }
 
   void _onBottomNavigationBarItemTapped(int index) {
-  setState(() {
-    selectedIndex = index;
-  });
-}
+    setState(() {
+      selectedIndex = index;
+    });
+  }
 
   Future<void> fetchUser() async {
     final userResponse = await http.get(
@@ -229,28 +233,27 @@ class _MyHomePageState extends State<MyHomePage> {
           ),
         ),
         bottomNavigationBar: BottomNavigationBar(
-        type: BottomNavigationBarType.fixed,
-        currentIndex: selectedIndex,
-        onTap: _onBottomNavigationBarItemTapped,
-        items: const <BottomNavigationBarItem>[
-          BottomNavigationBarItem(
-            icon: Icon(Icons.home),
-            label: 'Home',
-            
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.favorite),
-            label: 'Favourite',
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.person),
-            label: 'User',
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.article),
-            label: 'Blogs',
-          ),
-        ],
+          type: BottomNavigationBarType.fixed,
+          currentIndex: selectedIndex,
+          onTap: _onBottomNavigationBarItemTapped,
+          items: const <BottomNavigationBarItem>[
+            BottomNavigationBarItem(
+              icon: Icon(Icons.home),
+              label: 'Home',
+            ),
+            BottomNavigationBarItem(
+              icon: Icon(Icons.favorite),
+              label: 'Favourite',
+            ),
+            BottomNavigationBarItem(
+              icon: Icon(Icons.person),
+              label: 'User',
+            ),
+            BottomNavigationBarItem(
+              icon: Icon(Icons.article),
+              label: 'Blogs',
+            ),
+          ],
         ),
       );
     }
@@ -383,6 +386,18 @@ class UserDetailsPage extends StatelessWidget {
         child: userData != null
             ? ListView(
                 children: [
+                  CircleAvatar(
+                    radius: 70,
+                    child: ClipOval(
+                      child: Image.network(
+                        "${userData!['avatar']}",
+                        fit: BoxFit.cover,
+                        height: 200,
+                        width: 140,
+                      ),
+                    ),
+                  ),
+                  SizedBox(height: 16,),
                   Card(
                     elevation: 5,
                     child: ListTile(
@@ -411,7 +426,7 @@ class UserDetailsPage extends StatelessWidget {
                       subtitle: Text(userData!['mobile'] ?? 'Not Available'),
                     ),
                   ),
-                  Card(
+                  /* Card(
                     elevation: 5,
                     child: ListTile(
                       title: Text('Profile Photo'),
@@ -424,14 +439,16 @@ class UserDetailsPage extends StatelessWidget {
                         ),
                       ),
                     ),
-                  ),
+                  ), */
                   SizedBox(height: 16),
                   ElevatedButton(
                     onPressed: () {
                       Navigator.push(
                         context,
                         MaterialPageRoute(
-                            builder: (context) => Profile(userData: userData,)),
+                            builder: (context) => Profile(
+                                  userData: userData,
+                                )),
                       );
                     },
                     child: Text('Update', style: TextStyle(fontSize: 14)),
