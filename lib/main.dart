@@ -10,6 +10,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'dart:convert';
 import 'login.dart';
 import 'profile.dart';
+import 'map.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -397,7 +398,9 @@ class UserDetailsPage extends StatelessWidget {
                       ),
                     ),
                   ),
-                  SizedBox(height: 16,),
+                  SizedBox(
+                    height: 16,
+                  ),
                   Card(
                     elevation: 5,
                     child: ListTile(
@@ -426,20 +429,53 @@ class UserDetailsPage extends StatelessWidget {
                       subtitle: Text(userData!['mobile'] ?? 'Not Available'),
                     ),
                   ),
-                  /* Card(
+                  Card(
                     elevation: 5,
                     child: ListTile(
-                      title: Text('Profile Photo'),
-                      subtitle: Container(
-                        width: 100,
-                        height: 100,
-                        child: Image.network(
-                          "${userData!['avatar']}",
-                          fit: BoxFit.fitHeight,
-                        ),
-                      ),
+                      title: Text('Latitude'),
+                      subtitle: Text(userData!['latitude'].toString()),
                     ),
-                  ), */
+                  ),
+                  Card(
+                    elevation: 5,
+                    child: ListTile(
+                      title: Text('Longitude'),
+                      subtitle: Text(userData!['longitude'].toString()),
+                    ),
+                  ),
+                  SizedBox(height: 16),
+                  Card(
+                    elevation: 5,
+                    child: userData!['latitude'] != null &&
+                            userData!['longitude'] != null
+                        ? Container(
+                            height: 300,
+                            child: MapScreen(
+                              latitude: userData!['latitude'],
+                              longitude: userData!['longitude'],
+                            ),
+                          )
+                        : Container(
+                          height: 100,
+                          child: Center(
+                              child: Text('Location not available'),
+                            ),
+                        ),
+                  ),
+                  // ElevatedButton(
+                  //   onPressed: () {
+                  //     Navigator.push(
+                  //       context,
+                  //       MaterialPageRoute(
+                  //         builder: (context) => MapScreen(
+                  //           latitude: userData!['latitude'],
+                  //           longitude: userData!['longitude'],
+                  //         ),
+                  //       ),
+                  //     );
+                  //   },
+                  //   child: Text('Show on Map', style: TextStyle(fontSize: 14)),
+                  // ),
                   SizedBox(height: 16),
                   ElevatedButton(
                     onPressed: () {

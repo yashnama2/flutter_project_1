@@ -1,9 +1,14 @@
+// ignore_for_file: use_build_context_synchronously
+
 import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:flutter/services.dart';
 import 'package:image_picker/image_picker.dart';
+import 'package:geolocator/geolocator.dart';
+import 'package:fluttertoast/fluttertoast.dart';
+import 'package:permission_handler/permission_handler.dart';
 import 'main.dart';
 
 class Profile extends StatefulWidget {
@@ -17,18 +22,24 @@ class Profile extends StatefulWidget {
 }
 
 class _ProfileState extends State<Profile> {
+  late double? latitude;
+  late double? longitude;
   late TextEditingController usernameController;
   late TextEditingController emailController;
   late TextEditingController dobController;
   late TextEditingController mobileController;
   late TextEditingController profilePictureController;
+  late TextEditingController positionController;
   late DateTime selectedDate;
   late bool imgSelect;
   File? selectedImage;
+  bool camera = false;
 
   @override
   void initState() {
     super.initState();
+    latitude = widget.userData!['latitude'];
+    longitude = widget.userData!['longitude'];
     imgSelect = false;
     selectedDate = DateTime.parse(widget.userData!['dob'] ?? '2000-01-01');
     usernameController =
@@ -39,11 +50,60 @@ class _ProfileState extends State<Profile> {
         TextEditingController(text: widget.userData!['mobile'] ?? '');
     profilePictureController =
         TextEditingController(text: widget.userData!['avatar']);
+    positionController = TextEditingController(text: '$latitude, $longitude');
   }
 
-  Future<void> _pickImage() async {
-    final XFile? pickedFile =
-        await ImagePicker().pickImage(source: ImageSource.gallery);
+  Future<void> _getUserLocation() async {
+    final hasPermission = await _handleLocationPermission();
+    if (!hasPermission) return;
+
+    try {
+      Position position = await Geolocator.getCurrentPosition(
+        desiredAccuracy: LocationAccuracy.high,
+      );
+
+      setState(() {
+        latitude = position.latitude;
+        longitude = position.longitude;
+      });
+
+      positionController.text = '$latitude, $longitude';
+    } catch (e) {
+      print('Error getting user location: $e');
+    }
+  }
+
+  Future<bool> _handleLocationPermission() async {
+    bool serviceEnabled;
+    LocationPermission permission;
+
+    serviceEnabled = await Geolocator.isLocationServiceEnabled();
+    if (!serviceEnabled) {
+      Fluttertoast.showToast(
+          msg: 'Location services are disabled. Please enable the services');
+      return false;
+    }
+    permission = await Geolocator.checkPermission();
+    if (permission == LocationPermission.denied) {
+      permission = await Geolocator.requestPermission();
+      if (permission == LocationPermission.denied) {
+        Fluttertoast.showToast(msg: 'Location permissions are denied');
+        return false;
+      }
+    }
+    if (permission == LocationPermission.deniedForever) {
+      Fluttertoast.showToast(
+          msg:
+              'Location permissions are permanently denied, we cannot request permissions.');
+      return false;
+    }
+    return true;
+  }
+
+  Future<void> _pickImage(bool camera) async {
+    final XFile? pickedFile = camera
+        ? await ImagePicker().pickImage(source: ImageSource.camera)
+        : await ImagePicker().pickImage(source: ImageSource.gallery);
 
     if (pickedFile != null) {
       imgSelect = true;
@@ -71,8 +131,14 @@ class _ProfileState extends State<Profile> {
     }
   }
 
-  void updateUserProfile(String newUsername, String newEmail, String? newDob,
-      String newMobile, String profilePicturePath) async {
+  void updateUserProfile(
+      String newUsername,
+      String newEmail,
+      String? newDob,
+      String newMobile,
+      String profilePicturePath,
+      double? latitude,
+      double? longitude) async {
     SharedPreferences prefs = await SharedPreferences.getInstance();
     // if (newDob == '') {
     //   newDob = null;
@@ -97,13 +163,15 @@ class _ProfileState extends State<Profile> {
       request.fields['dob'] = newDob;
     }
     request.fields['mobile'] = newMobile;
+    request.fields['latitude'] = latitude.toString();
+    request.fields['longitude'] = longitude.toString();
 
     var response = await request.send();
 
     if (response.statusCode == 200) {
       // Update successful
       print('Profile updated successfully');
-
+      setState(() {});
       // Navigate back to UserDetailsPage with updated user data
       Navigator.pushReplacement(
         context,
@@ -144,27 +212,27 @@ class _ProfileState extends State<Profile> {
                         padding: const EdgeInsets.fromLTRB(20, 20, 20, 50),
                         child: selectedImage != null
                             ? CircleAvatar(
-                              radius: 70,
-                              child: ClipOval(
-                                child: Image.file(
+                                radius: 70,
+                                child: ClipOval(
+                                  child: Image.file(
                                     selectedImage!,
                                     fit: BoxFit.cover,
                                     height: 200,
                                     width: 200,
                                   ),
-                              ),
-                            )
+                                ),
+                              )
                             : CircleAvatar(
-                              radius: 70,
-                              child: ClipOval(
-                                child: Image.network(
+                                radius: 70,
+                                child: ClipOval(
+                                  child: Image.network(
                                     "${widget.userData!['avatar']}",
                                     fit: BoxFit.cover,
                                     width: 200,
                                     height: 200,
                                   ),
-                              ),
-                            )),
+                                ),
+                              )),
                     Container(
                       padding: const EdgeInsets.fromLTRB(20, 20, 20, 0),
                       child: TextField(
@@ -224,6 +292,25 @@ class _ProfileState extends State<Profile> {
                         ),
                       ),
                     ),
+                    Container(
+                      padding: const EdgeInsets.fromLTRB(20, 20, 20, 0),
+                      child: GestureDetector(
+                        onTap: () {
+                          _getUserLocation();
+                        },
+                        child: AbsorbPointer(
+                          child: TextField(
+                            controller: positionController,
+                            decoration: InputDecoration(
+                              border: OutlineInputBorder(
+                                borderRadius: BorderRadius.circular(90.0),
+                              ),
+                              labelText: 'Position',
+                            ),
+                          ),
+                        ),
+                      ),
+                    ),
                     Visibility(
                       visible: false,
                       child: Container(
@@ -239,18 +326,106 @@ class _ProfileState extends State<Profile> {
                         ),
                       ),
                     ),
-                    
                     Container(
                       height: 80,
-                      padding: const EdgeInsets.all(20),
+                      padding: const EdgeInsets.all(15),
                       child: ElevatedButton(
-                        // style: ElevatedButton.styleFrom(
-                        //   minimumSize: const Size.fromHeight(50),
-                        // ),
                         child: const Text('Change Image'),
-                        onPressed: () async {
-                          await _pickImage();
+                        onPressed: () {
+                          showDialog(
+                              context: context,
+                              builder: (context) => AlertDialog(
+                                    title: Center(
+                                        child: Text(
+                                      'Select Image',
+                                      style: TextStyle(fontSize: 20),
+                                    )),
+                                    actions: [
+                                      TextButton(
+                                          onPressed: () async {
+                                            Navigator.pop(context);
+                                            await _pickImage(false);
+                                          },
+                                          child: Text('From Gallery')),
+                                      TextButton(
+                                          onPressed: () async {
+                                            var status = await Permission.camera
+                                                .request();
+                                            if (status.isGranted) {
+                                              Navigator.pop(context);
+                                              _pickImage(true);
+                                            } else if (status
+                                                .isPermanentlyDenied) {
+                                              Navigator.pop(context);
+                                              showDialog(
+                                                context: context,
+                                                builder: (context) =>
+                                                    AlertDialog(
+                                                  title:
+                                                      Text('Permission Denied Permanently'),
+                                                  content: Text(
+                                                      'Open App Settings to allow Camera Permission.'),
+                                                  actions: [
+                                                    TextButton(
+                                                      onPressed: () {
+                                                        Navigator.pop(context);
+                                                      },
+                                                      child: Text('OK'),
+                                                    ),
+                                                  ],
+                                                ),
+                                              );
+                                            } else {
+                                              Navigator.pop(context);
+                                              showDialog(
+                                                context: context,
+                                                builder: (context) =>
+                                                    AlertDialog(
+                                                  title:
+                                                      Text('Permission Denied'),
+                                                  content: Text(
+                                                      'Camera permission is required to pick an image.'),
+                                                  actions: [
+                                                    TextButton(
+                                                      onPressed: () {
+                                                        Navigator.pop(context);
+                                                      },
+                                                      child: Text('OK'),
+                                                    ),
+                                                  ],
+                                                ),
+                                              );
+                                            }
+                                          },
+                                          child: Text('From Camera'))
+                                    ],
+                                  ));
                         },
+                        // onPressed: () async {
+                        //   var status = await Permission.camera.request();
+                        //   if (status.isGranted) {
+                        //     // Permission granted, you can now use the camera
+                        //     _pickImage();
+                        //   } else {
+                        //     // Permission denied
+                        //     showDialog(
+                        //       context: context,
+                        //       builder: (context) => AlertDialog(
+                        //         title: Text('Permission Denied'),
+                        //         content: Text(
+                        //             'Camera permission is required to pick an image.'),
+                        //         actions: [
+                        //           TextButton(
+                        //             onPressed: () {
+                        //               Navigator.pop(context);
+                        //             },
+                        //             child: Text('OK'),
+                        //           ),
+                        //         ],
+                        //       ),
+                        //     );
+                        //   }
+                        // },
                       ),
                     ),
                     Container(
@@ -268,6 +443,8 @@ class _ProfileState extends State<Profile> {
                               dobController.text,
                               mobileController.text,
                               profilePictureController.text,
+                              latitude,
+                              longitude,
                             );
                           },
                         )),

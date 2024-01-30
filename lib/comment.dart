@@ -3,7 +3,6 @@ import 'dart:convert';
 import 'package:flutter/material.dart';
 
 class CommentDisplay extends StatefulWidget {
-  //final List<dynamic>? comments;
   final int? userId;
   final int postId;
 
@@ -19,7 +18,8 @@ class _CommentDisplayState extends State<CommentDisplay> {
   List<dynamic>? commentsWithReplies;
   String hint = 'Enter comment...';
   FocusNode commentFocusNode = FocusNode();
-  int? parentId; 
+  int? parentId;
+  bool isReplying = false;
 
   @override
   initState() {
@@ -63,7 +63,8 @@ class _CommentDisplayState extends State<CommentDisplay> {
     }).toList();
   }
 
-  Future<void> _addComment(int postId, String commentBody, int? userId, int? parent) async {
+  Future<void> _addComment(
+      int postId, String commentBody, int? userId, int? parent) async {
     final response = await http.post(
       Uri.parse('http://192.168.1.17:8000/api/comment/'),
       headers: {
@@ -84,6 +85,7 @@ class _CommentDisplayState extends State<CommentDisplay> {
         FocusScope.of(context).unfocus();
         hint = 'Enter comment...';
         parentId = null;
+        isReplying = false;
         _getComments();
       });
       print('Comment added successfully');
@@ -138,17 +140,28 @@ class _CommentDisplayState extends State<CommentDisplay> {
                         ),
                         GestureDetector(
                           onTap: () {
+                            setState(() {
+                              hint =
+                                  'replying to @${commentData['comment']?['author_name']}';
+                              FocusScope.of(context)
+                                  .requestFocus(commentFocusNode);
+                              parentId = commentData['comment']?['id'];
+                              isReplying = !isReplying;
+                            });
+                          },
+                          /* onTap: () {
                             hint = 'replying to @${commentData['comment']?['author_name']}';
                             FocusScope.of(context).requestFocus(commentFocusNode);
                             setState(() {
                               parentId = commentData['comment']?['id'];
                             });
-                          },
+                          }, */
                           child: Padding(
                             padding: const EdgeInsets.only(left: 40),
                             child: Text(
                               'Reply...',
-                              style: TextStyle(fontSize: 14, color: Colors.grey),
+                              style:
+                                  TextStyle(fontSize: 14, color: Colors.grey),
                             ),
                           ),
                         ),
@@ -240,7 +253,6 @@ class _CommentDisplayState extends State<CommentDisplay> {
               children: [
                 Expanded(
                   child: TextField(
-                    //autofocus: true,
                     focusNode: commentFocusNode,
                     controller: commentController,
                     decoration: InputDecoration(
@@ -250,6 +262,20 @@ class _CommentDisplayState extends State<CommentDisplay> {
                       border: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(30),
                       ),
+                      suffixIcon: isReplying
+                          ? IconButton(
+                              icon: Icon(Icons.cancel, color: Colors.red),
+                              onPressed: () {
+                                setState(() {
+                                  hint = 'Enter comment...';
+                                  parentId = null;
+                                  FocusScope.of(context).unfocus();
+                                  commentController.clear();
+                                  isReplying = !isReplying;
+                                });
+                              },
+                            )
+                          : null,
                     ),
                   ),
                 ),
