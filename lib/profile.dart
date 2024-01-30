@@ -140,12 +140,8 @@ class _ProfileState extends State<Profile> {
       double? latitude,
       double? longitude) async {
     SharedPreferences prefs = await SharedPreferences.getInstance();
-    // if (newDob == '') {
-    //   newDob = null;
-    // }
     String? token = prefs.getString('token');
     int? userId = prefs.getInt('userId');
-    //bool? isLoggedIn = prefs.getBool('isLoggedIn');
     final String updateProfileUrl =
         'http://192.168.1.17:8000/api/users/$userId/';
 
@@ -169,11 +165,9 @@ class _ProfileState extends State<Profile> {
     var response = await request.send();
 
     if (response.statusCode == 200) {
-      // Update successful
       print('Profile updated successfully');
       setState(() {});
-      // Navigate back to UserDetailsPage with updated user data
-      Navigator.pushReplacement(
+      Navigator.pushAndRemoveUntil(
         context,
         MaterialPageRoute(
             builder: (context) => MyHomePage(
@@ -182,9 +176,9 @@ class _ProfileState extends State<Profile> {
                   isLoggedIn: true,
                   comingFromProfilePage: true,
                 )),
+        (route) => false,
       );
     } else {
-      // Handle update failure
       print('Failed to update user data. Status code: ${response.statusCode}');
     }
   }
@@ -361,8 +355,8 @@ class _ProfileState extends State<Profile> {
                                                 context: context,
                                                 builder: (context) =>
                                                     AlertDialog(
-                                                  title:
-                                                      Text('Permission Denied Permanently'),
+                                                  title: Text(
+                                                      'Permission Denied Permanently'),
                                                   content: Text(
                                                       'Open App Settings to allow Camera Permission.'),
                                                   actions: [
@@ -401,31 +395,6 @@ class _ProfileState extends State<Profile> {
                                     ],
                                   ));
                         },
-                        // onPressed: () async {
-                        //   var status = await Permission.camera.request();
-                        //   if (status.isGranted) {
-                        //     // Permission granted, you can now use the camera
-                        //     _pickImage();
-                        //   } else {
-                        //     // Permission denied
-                        //     showDialog(
-                        //       context: context,
-                        //       builder: (context) => AlertDialog(
-                        //         title: Text('Permission Denied'),
-                        //         content: Text(
-                        //             'Camera permission is required to pick an image.'),
-                        //         actions: [
-                        //           TextButton(
-                        //             onPressed: () {
-                        //               Navigator.pop(context);
-                        //             },
-                        //             child: Text('OK'),
-                        //           ),
-                        //         ],
-                        //       ),
-                        //     );
-                        //   }
-                        // },
                       ),
                     ),
                     Container(

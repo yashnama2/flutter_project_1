@@ -74,6 +74,7 @@ class MyHomePage extends StatefulWidget {
   String? token;
   final bool isLoggedIn;
   bool comingFromProfilePage;
+
   MyHomePage({
     required this.userId,
     required this.token,
@@ -456,11 +457,11 @@ class UserDetailsPage extends StatelessWidget {
                             ),
                           )
                         : Container(
-                          height: 100,
-                          child: Center(
+                            height: 100,
+                            child: Center(
                               child: Text('Location not available'),
                             ),
-                        ),
+                          ),
                   ),
                   // ElevatedButton(
                   //   onPressed: () {
@@ -482,9 +483,10 @@ class UserDetailsPage extends StatelessWidget {
                       Navigator.push(
                         context,
                         MaterialPageRoute(
-                            builder: (context) => Profile(
-                                  userData: userData,
-                                )),
+                          builder: (context) => Profile(
+                            userData: userData,
+                          ),
+                        ),
                       );
                     },
                     child: Text('Update', style: TextStyle(fontSize: 14)),
