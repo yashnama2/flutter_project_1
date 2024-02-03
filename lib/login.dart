@@ -43,13 +43,14 @@ class _LoginPageState extends State<LoginPage> {
   }
 
   Future<void> _login() async {
-    final String apiUrl = 'http://192.168.1.17:8000/api/login/';
+    final String apiUrl = 'https://test.securitytroops.in/stapi/v1/login/';
     print('login called');
     final response = await http.post(
       Uri.parse(apiUrl),
       body: {
         'username': usernameController.text,
         'password': passwordController.text,
+        'fcm_type': 'android',
       },
     );
 
@@ -61,14 +62,14 @@ class _LoginPageState extends State<LoginPage> {
       passwordController.clear();
       SharedPreferences prefs = await SharedPreferences.getInstance();
       prefs.setBool('isLoggedIn', true);
-      prefs.setInt('userId', data['user']['id']);
+      prefs.setInt('userId', data['id']);
       prefs.setString('token', data['token']);
 
       Navigator.pushReplacement(
         context,
         MaterialPageRoute(
           builder: (context) => MyHomePage(
-              userId: data['user']['id'],
+              userId: data['id'],
               token: data['token'],
               isLoggedIn: widget.isLoggedIn),
         ),

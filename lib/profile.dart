@@ -47,9 +47,9 @@ class _ProfileState extends State<Profile> {
     emailController = TextEditingController(text: widget.userData!['email']);
     dobController = TextEditingController(text: widget.userData!['dob'] ?? '');
     mobileController =
-        TextEditingController(text: widget.userData!['mobile'] ?? '');
+        TextEditingController(text: widget.userData!['mobile'].toString());
     profilePictureController =
-        TextEditingController(text: widget.userData!['avatar']);
+        TextEditingController(text: widget.userData!['cover']);
     positionController = TextEditingController(text: '$latitude, $longitude');
   }
 
@@ -143,7 +143,7 @@ class _ProfileState extends State<Profile> {
     String? token = prefs.getString('token');
     int? userId = prefs.getInt('userId');
     final String updateProfileUrl =
-        'http://192.168.1.17:8000/api/users/$userId/';
+        'https://test.securitytroops.in/stapi/v1/users/$userId/';
 
     final File imageFile = File(profilePicturePath);
     var request = http.MultipartRequest('PATCH', Uri.parse(updateProfileUrl));
@@ -151,7 +151,7 @@ class _ProfileState extends State<Profile> {
     print(imgSelect);
     if (imgSelect == true) {
       request.files
-          .add(await http.MultipartFile.fromPath('avatar', imageFile.path));
+          .add(await http.MultipartFile.fromPath('cover', imageFile.path));
     }
     request.fields['username'] = newUsername;
     request.fields['email'] = newEmail;
@@ -159,8 +159,10 @@ class _ProfileState extends State<Profile> {
       request.fields['dob'] = newDob;
     }
     request.fields['mobile'] = newMobile;
-    request.fields['latitude'] = latitude.toString();
-    request.fields['longitude'] = longitude.toString();
+    if (latitude != null && longitude != null) {
+      request.fields['latitude'] = latitude.toString();
+      request.fields['longitude'] = longitude.toString();
+    } 
 
     var response = await request.send();
 
@@ -220,7 +222,7 @@ class _ProfileState extends State<Profile> {
                                 radius: 70,
                                 child: ClipOval(
                                   child: Image.network(
-                                    "${widget.userData!['avatar']}",
+                                    "${widget.userData!['cover']}",
                                     fit: BoxFit.cover,
                                     width: 200,
                                     height: 200,

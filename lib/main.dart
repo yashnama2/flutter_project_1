@@ -2,6 +2,7 @@
 
 import 'package:english_words/english_words.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_project_1/channel.dart';
 import 'package:flutter_project_1/introduction_page.dart';
 import 'package:flutter_project_1/posts.dart';
 import 'package:provider/provider.dart';
@@ -87,7 +88,6 @@ class MyHomePage extends StatefulWidget {
 
 class _MyHomePageState extends State<MyHomePage> {
   var selectedIndex = 0;
-
   Map<String, dynamic>? userData;
 
   @override
@@ -111,7 +111,8 @@ class _MyHomePageState extends State<MyHomePage> {
 
   Future<void> fetchUser() async {
     final userResponse = await http.get(
-      Uri.parse('http://192.168.1.17:8000/api/users/${widget.userId}'),
+      Uri.parse(
+          'https://test.securitytroops.in/stapi/v1/users/${widget.userId}/'),
       headers: {
         'Authorization': 'token ${widget.token}',
       },
@@ -121,7 +122,7 @@ class _MyHomePageState extends State<MyHomePage> {
       setState(() {
         userData = json.decode(userResponse.body);
       });
-      print('User data: $userData');
+      // print('User data: $userData');
     } else {
       print(
           'Failed to fetch user data. Status code: ${userResponse.statusCode}');
@@ -138,7 +139,7 @@ class _MyHomePageState extends State<MyHomePage> {
         case 2:
           page = UserDetailsPage(userData: userData);
         case 1:
-          page = FavouritesPage();
+          page = Channel(token: widget.token, userId: widget.userId);
         case 0:
           page = GeneratorPage();
         case 3:
@@ -172,7 +173,7 @@ class _MyHomePageState extends State<MyHomePage> {
                   currentAccountPicture: CircleAvatar(
                       child: ClipOval(
                           child: Image.network(
-                    "${userData!['avatar']}",
+                    "${userData!['cover']}",
                     fit: BoxFit.cover,
                     width: 100,
                     height: 100,
@@ -189,8 +190,8 @@ class _MyHomePageState extends State<MyHomePage> {
                 },
               ),
               ListTile(
-                title: const Text('Favourites'),
-                leading: Icon(Icons.favorite),
+                title: const Text('Channels'),
+                leading: Icon(Icons.group),
                 selected: selectedIndex == 1,
                 onTap: () {
                   _onItemTapped(1);
@@ -210,25 +211,22 @@ class _MyHomePageState extends State<MyHomePage> {
                 title: const Text('Logout'),
                 trailing: Icon(Icons.logout),
                 onTap: () async {
-                  const String logoutUrl =
-                      'http://192.168.1.17:8000/api/logout/';
-                  final logoutResponse = await http.post(Uri.parse(logoutUrl));
-                  if (logoutResponse.statusCode == 200) {
-                    SharedPreferences prefs =
-                        await SharedPreferences.getInstance();
-                    prefs.setBool('isLoggedIn', false);
-                    prefs.remove('userId');
-                    prefs.remove('token');
-                    Navigator.pushReplacement(
-                      context,
-                      MaterialPageRoute(
-                        builder: (context) => LoginPage(isLoggedIn: false),
-                      ),
-                    );
-                  } else {
-                    print(
-                        'Logout failed. Status code: ${logoutResponse.statusCode}');
-                  }
+                  // const String logoutUrl =
+                  //     'http://192.168.1.17:8000/api/logout/';
+                  // final logoutResponse = await http.post(Uri.parse(logoutUrl));
+
+                  SharedPreferences prefs =
+                      await SharedPreferences.getInstance();
+                  prefs.setBool('isLoggedIn', false);
+                  prefs.remove('userId');
+                  prefs.remove('token');
+                  prefs.remove('companyId');
+                  Navigator.pushReplacement(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => LoginPage(isLoggedIn: false),
+                    ),
+                  );
                 },
               ),
             ],
@@ -244,8 +242,8 @@ class _MyHomePageState extends State<MyHomePage> {
               label: 'Home',
             ),
             BottomNavigationBarItem(
-              icon: Icon(Icons.favorite),
-              label: 'Favourite',
+              icon: Icon(Icons.group),
+              label: 'Channels',
             ),
             BottomNavigationBarItem(
               icon: Icon(Icons.person),
@@ -392,7 +390,7 @@ class UserDetailsPage extends StatelessWidget {
                     radius: 70,
                     child: ClipOval(
                       child: Image.network(
-                        "${userData!['avatar']}",
+                        "${userData!['cover']}",
                         fit: BoxFit.cover,
                         height: 200,
                         width: 140,
@@ -427,7 +425,7 @@ class UserDetailsPage extends StatelessWidget {
                     elevation: 5,
                     child: ListTile(
                       title: Text('Mobile'),
-                      subtitle: Text(userData!['mobile'] ?? 'Not Available'),
+                      subtitle: Text(userData!['mobile'].toString()),
                     ),
                   ),
                   Card(
